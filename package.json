@@ -1,0 +1,17 @@
+{
+  "name": "imsg-skimmer",
+  "version": "0.1.0",
+  "description": "Local, read-only viewer and exporter for iMessage/SMS/MMS history in iPhone backups",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "imsg-skimmer": "bin/imsg-skimmer.js"
+  },
+  "scripts": {
+    "start": "node bin/imsg-skimmer.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\""
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light">
+  <title>imsg-skimmer</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/app.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div id="auth-notice" class="notice" hidden>
+    <div class="notice-box" role="alert">
+      <h1>imsg-skimmer</h1>
+      <p>Open the link printed in the terminal (it contains an access token).</p>
+    </div>
+  </div>
+
+  <div id="banner" class="banner" role="alert" hidden>
+    <span id="banner-text" class="banner-text"></span>
+    <button type="button" id="banner-close" class="banner-close" aria-label="Dismiss error">×</button>
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <h1>imsg-skimmer</h1>
+      <div id="backup-summary" class="backup-summary"></div>
+    </div>
+
+    <form id="search-form" class="search-form" role="search">
+      <label for="search-input" class="sr-only">Search messages</label>
+      <input id="search-input" type="search" name="q" placeholder="Search messages (&quot;quote&quot; phrases)" autocomplete="off" spellcheck="false">
+      <button type="submit" class="btn btn-primary">Search</button>
+      <label id="scope-label" class="scope-label disabled" for="search-scope">
+        <input id="search-scope" type="checkbox" disabled>
+        This conversation only
+      </label>
+    </form>
+
+    <div class="date-range" role="group" aria-label="Date range filter">
+      <label for="date-from">From</label>
+      <input id="date-from" type="date">
+      <label for="date-to">To</label>
+      <input id="date-to" type="date">
+      <button type="button" id="date-clear" class="btn" disabled>Clear</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Conversations">
+      <div class="sidebar-top">
+        <label for="conv-filter" class="sr-only">Filter conversations</label>
+        <input id="conv-filter" type="search" placeholder="Filter conversations" autocomplete="off" spellcheck="false">
+        <div id="conv-status" class="conv-status" role="status" aria-live="polite"></div>
+      </div>
+      <nav id="conv-list" class="conv-list" aria-label="Conversation list"></nav>
+    </aside>
+    <main id="main" class="main"></main>
+  </div>
+</body>
+</html>

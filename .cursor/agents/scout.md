@@ -1,0 +1,1 @@
+/home/vngo/.cursor/agents/scout.md
