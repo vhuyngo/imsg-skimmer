@@ -1,1 +1,0 @@
-/home/vngo/.cursor/agents/verifier.md
