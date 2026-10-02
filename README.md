@@ -17,7 +17,7 @@ computer (see [Making a fresh backup](#making-a-fresh-backup)). There are no `np
 ### Get the project
 
 ```bash
-git clone git@github.com:vinhhuyngo/imsg-skimmer.git
+git clone git@github.com:vhuyngo/imsg-skimmer.git
 cd imsg-skimmer
 node bin/imsg-skimmer.js --version
 ```
