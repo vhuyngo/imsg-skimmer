@@ -1,6 +1,6 @@
 {
   "name": "imsg-skimmer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local, read-only viewer and exporter for iMessage/SMS/MMS history in iPhone backups",
   "private": true,
   "type": "module",

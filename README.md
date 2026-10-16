@@ -14,9 +14,9 @@ Nothing is sent to the internet. The tool does **not** change your phone or your
 1. **Back up the iPhone** on this PC with **Apple Devices** (Microsoft Store): plug in → **Back Up Now**.
 2. **One-time setup** — pick **one** of these:
 
-   **A) Double-click** (after you downloaded the ZIP once):  
-   `windows\0-Setup.bat`  
-   Installs Node if `winget` can, and copies the app to `Documents\imsg-skimmer` if needed.
+   **A) Double-click** (install or **update** to latest):  
+   `windows\0-Setup.bat` or `windows\0-Update.bat`  
+   Downloads the current `main` branch from GitHub and overwrites `Documents\imsg-skimmer` (exports on the Desktop stay). Safe to run again after you publish fixes.
 
    **B) One PowerShell command** (downloads the installer script from GitHub):
 

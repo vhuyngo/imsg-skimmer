@@ -86,8 +86,11 @@ You can close PowerShell.
 powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/vhuyngo/imsg-skimmer/main/windows/install.ps1'))"
 ```
 
-That installs Node.js when possible (via `winget`), downloads the app into  
-`Documents\imsg-skimmer`, and creates `imsg-skimmer.cmd` for commands.
+That installs Node.js when possible (via `winget`), **downloads the latest app from GitHub**, and copies it into  
+`Documents\imsg-skimmer` (overwriting an older install). It creates `imsg-skimmer.cmd` for commands.
+
+**Already installed?** Run the same one-liner or `0-Update.bat` again anytime — it always refreshes from GitHub.  
+Your **`Desktop\My-iPhone-Messages`** export folder is **not** deleted.
 
 Then continue at **Part D** (skip the manual ZIP steps below).
 
@@ -113,7 +116,8 @@ Inside the `imsg-skimmer` folder, open the **`windows`** subfolder. You will see
 
 | File | What it does |
 |------|----------------|
-| **`0-Setup.bat`** | **One-time setup:** Node check/install + app folder (run before the others if you use the ZIP). |
+| **`0-Setup.bat`** | **Setup or update:** Node check/install + download latest app from GitHub (overwrites `Documents\imsg-skimmer`). |
+| **`0-Update.bat`** | Same as setup — use when you already installed once and want the newest version. |
 | **`1-Check-Node.bat`** | Confirms Node is installed only. |
 | **`2-List-My-Backups.bat`** | Shows backups on this PC and gives each a number (`# 1`, `# 2`, …). |
 | **`3-Export-All-Messages.bat`** | Exports **all** conversations to your Desktop. |

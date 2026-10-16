@@ -1,9 +1,10 @@
-# Installs Node.js 24+ (via winget when possible), fetches imsg-skimmer if needed,
-# and optionally runs the first export. Safe to run more than once.
+# Installs or updates imsg-skimmer from GitHub main (overwrites the app folder).
+# Re-run anytime to get the latest version. Does not delete exports on your Desktop.
 #Requires -Version 5.1
 param(
   [string]$InstallDir = (Join-Path $env:USERPROFILE 'Documents\imsg-skimmer'),
   [switch]$SkipNodeCheck,
+  [switch]$SkipUpdate,
   [switch]$ExportAfterSetup
 )
 
@@ -12,6 +13,12 @@ $RepoZip = 'https://github.com/vhuyngo/imsg-skimmer/archive/refs/heads/main.zip'
 $ScriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { '' }
 
 function Write-Step([string]$Text) { Write-Host "`n==> $Text" -ForegroundColor Cyan }
+
+function Read-AppVersion([string]$Dir) {
+  $pkg = Join-Path $Dir 'package.json'
+  if (-not (Test-Path $pkg)) { return $null }
+  return (Get-Content $pkg -Raw | ConvertFrom-Json).version
+}
 
 function Get-NodeMajor {
   try {
@@ -26,6 +33,9 @@ function Ensure-Node {
   $major = Get-NodeMajor
   if ($major -ge 24) {
     Write-Host "Node.js $(node --version) OK."
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+      winget upgrade --id OpenJS.NodeJS.Current -e --accept-package-agreements --accept-source-agreements 2>$null | Out-Null
+    }
     return
   }
   Write-Step 'Node.js 24 or newer is required'
@@ -43,36 +53,53 @@ function Ensure-Node {
   }
 }
 
-function Get-AppRoot {
-  if ($ScriptRoot) {
-    $sibling = Join-Path $ScriptRoot '..'
-    if (Test-Path (Join-Path $sibling 'bin\imsg-skimmer.js')) {
-      return (Resolve-Path $sibling).Path
-    }
-  }
-  if (Test-Path (Join-Path $InstallDir 'bin\imsg-skimmer.js')) {
-    return (Resolve-Path $InstallDir).Path
-  }
-  return $null
+function Sync-Directory([string]$From, [string]$To) {
+  New-Item -ItemType Directory -Force -Path $To | Out-Null
+  $null = & robocopy.exe $From $To /MIR /NFL /NDL /NJH /NJS /NP
+  if ($LASTEXITCODE -ge 8) { throw "Could not copy files (robocopy exit $LASTEXITCODE)." }
 }
 
-function Ensure-App {
-  $existing = Get-AppRoot
-  if ($existing) {
-    Write-Host "imsg-skimmer found at $existing"
-    return $existing
-  }
-  Write-Step "Downloading imsg-skimmer to $InstallDir"
-  New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+function Download-LatestApp {
+  Write-Step "Downloading latest imsg-skimmer from GitHub (branch: main)"
   $tmp = Join-Path $env:TEMP ("imsg-skimmer-" + [guid]::NewGuid().ToString())
   New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-  $zip = Join-Path $tmp 'repo.zip'
-  Invoke-WebRequest -Uri $RepoZip -OutFile $zip -UseBasicParsing
-  Expand-Archive -Path $zip -DestinationPath $tmp -Force
-  $extracted = Join-Path $tmp 'imsg-skimmer-main'
-  if (-not (Test-Path $extracted)) { throw 'Unexpected ZIP layout from GitHub.' }
-  Copy-Item -Path (Join-Path $extracted '*') -Destination $InstallDir -Recurse -Force
-  Remove-Item -Recurse -Force $tmp
+  try {
+    $zip = Join-Path $tmp 'repo.zip'
+    Invoke-WebRequest -Uri $RepoZip -OutFile $zip -UseBasicParsing
+    Expand-Archive -Path $zip -DestinationPath $tmp -Force
+    $extracted = Join-Path $tmp 'imsg-skimmer-main'
+    if (-not (Test-Path (Join-Path $extracted 'bin\imsg-skimmer.js'))) {
+      throw 'Unexpected ZIP layout from GitHub.'
+    }
+    return $extracted
+  } finally {
+    if (Test-Path (Join-Path $tmp 'repo.zip')) { Remove-Item -Force (Join-Path $tmp 'repo.zip') -ErrorAction SilentlyContinue }
+  }
+}
+
+function Install-OrUpdate-App {
+  $oldVersion = Read-AppVersion $InstallDir
+  if ($SkipUpdate -and $oldVersion) {
+    Write-Host "Skipping download (-SkipUpdate). Version $oldVersion at $InstallDir"
+    return (Resolve-Path $InstallDir).Path
+  }
+
+  $extracted = Download-LatestApp
+  $newVersion = Read-AppVersion $extracted
+  if ($oldVersion) {
+    Write-Host "Updating $InstallDir (was v$oldVersion, now v$newVersion)..."
+  } else {
+    Write-Host "Installing v$newVersion to $InstallDir ..."
+  }
+  Sync-Directory $extracted $InstallDir
+  Remove-Item -Recurse -Force (Split-Path $extracted -Parent) -ErrorAction SilentlyContinue
+
+  $meta = @{
+    version   = $newVersion
+    updatedAt = (Get-Date).ToUniversalTime().ToString('o')
+    source    = 'github.com/vhuyngo/imsg-skimmer@main'
+  }
+  Set-Content -Path (Join-Path $InstallDir '.install-meta.json') -Value ($meta | ConvertTo-Json) -Encoding UTF8
   return (Resolve-Path $InstallDir).Path
 }
 
@@ -93,16 +120,19 @@ function Get-BackupArgs {
   return $args
 }
 
-Write-Host 'imsg-skimmer setup' -ForegroundColor Green
+Write-Host 'imsg-skimmer setup / update' -ForegroundColor Green
 Ensure-Node
-$AppRoot = Ensure-App
+$AppRoot = Install-OrUpdate-App
 Write-Launcher $AppRoot
 $windows = Join-Path $AppRoot 'windows'
+$ver = Read-AppVersion $AppRoot
 
 Write-Step 'Done'
 Write-Host @"
 
-App folder:  $AppRoot
+App folder:  $AppRoot  (version $ver)
+Re-run this script anytime to overwrite with the latest GitHub release.
+
 Quick commands (open PowerShell):
 
   cd "$AppRoot"
@@ -116,6 +146,13 @@ Or double-click in:  $windows
 After export: open Desktop\My-iPhone-Messages\index.html
 (search: 5-Search-Exported-Messages.bat)
 "@
+
+if ($ScriptRoot) {
+  $here = (Resolve-Path (Join-Path $ScriptRoot '..')).Path
+  if ($here -ne $AppRoot) {
+    Write-Host "`nNote: use $AppRoot for the current copy (this folder may be an older ZIP)." -ForegroundColor Yellow
+  }
+}
 
 if ($ExportAfterSetup) {
   Write-Step 'Running export (backup 1) to Desktop\My-iPhone-Messages'
