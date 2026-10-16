@@ -40,7 +40,7 @@ test('help, version and usage errors', async () => {
   const help = await run(['--help']);
   assert.equal(help.code, 0);
   for (const cmd of ['list', 'serve', 'export', 'purge']) assert.match(help.stdout, new RegExp(`imsg-skimmer ${cmd}`));
-  assert.equal((await run(['--version'])).stdout.trim(), '0.1.0');
+  assert.equal((await run(['--version'])).stdout.trim(), '0.1.1');
   assert.equal((await run(['frobnicate'])).code, 2);
   assert.equal((await run(['list', '--bogus'])).code, 2);
   assert.equal((await run(['export', ...base, '--backup', '1'])).code, 2, 'export needs --chat or --all');

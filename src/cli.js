@@ -9,7 +9,7 @@ import { FORMATS, exportConversations, localStamp } from './export.js';
 import { passwordSource } from './password.js';
 import { createServer } from './server.js';
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 const DEFAULT_PORT = 8686;
 
 const HELP = `imsg-skimmer ${VERSION}: read-only viewer and exporter for Messages in iPhone backups
