@@ -73,7 +73,25 @@ You can close PowerShell.
 
 ---
 
-## Part C — Download imsg-skimmer (no GitHub account needed)
+## Part C — Install imsg-skimmer (choose one way)
+
+### Option 1 — Automated (recommended)
+
+**If you already unzipped the download:** double-click  
+`imsg-skimmer\windows\0-Setup.bat`
+
+**If you only have PowerShell** (no ZIP yet), paste this **one line**, press Enter, and wait:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/vhuyngo/imsg-skimmer/main/windows/install.ps1'))"
+```
+
+That installs Node.js when possible (via `winget`), downloads the app into  
+`Documents\imsg-skimmer`, and creates `imsg-skimmer.cmd` for commands.
+
+Then continue at **Part D** (skip the manual ZIP steps below).
+
+### Option 2 — Manual ZIP (no GitHub account needed)
 
 1. Open your browser.
 2. Go to: **https://github.com/vhuyngo/imsg-skimmer**
@@ -95,7 +113,8 @@ Inside the `imsg-skimmer` folder, open the **`windows`** subfolder. You will see
 
 | File | What it does |
 |------|----------------|
-| **`1-Check-Node.bat`** | Confirms Node is installed. Run this first. |
+| **`0-Setup.bat`** | **One-time setup:** Node check/install + app folder (run before the others if you use the ZIP). |
+| **`1-Check-Node.bat`** | Confirms Node is installed only. |
 | **`2-List-My-Backups.bat`** | Shows backups on this PC and gives each a number (`# 1`, `# 2`, …). |
 | **`3-Export-All-Messages.bat`** | Exports **all** conversations to your Desktop. |
 | **`4-Browse-Messages-In-Browser.bat`** | Opens a private page on **this computer only** to read messages (optional). |

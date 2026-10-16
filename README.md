@@ -7,24 +7,49 @@ Nothing is sent to the internet. The tool does **not** change your phone or your
 
 ## Start here (Windows, no technical background)
 
-**Use the full walkthrough:** **[SETUP-WINDOWS.md](SETUP-WINDOWS.md)**  
-It explains backups, installing Node.js, downloading this project **without GitHub**, and what each button does.
+**Full walkthrough:** **[SETUP-WINDOWS.md](SETUP-WINDOWS.md)**
 
-**Short version:**
+### Simplest path (automated setup)
 
-1. Back up the iPhone with **Apple Devices** (Microsoft Store) on this PC.
-2. Install **Node.js 24+** from [nodejs.org](https://nodejs.org).
-3. Download this project: [github.com/vhuyngo/imsg-skimmer](https://github.com/vhuyngo/imsg-skimmer) → **Code** → **Download ZIP** → unzip.
-4. Open the **`windows`** folder inside the project and double-click:
-   - `1-Check-Node.bat`
-   - `2-List-My-Backups.bat`
-   - `3-Export-All-Messages.bat`  
-   Your messages are saved to **`Desktop\My-iPhone-Messages`**.
-5. In that folder, click **Date modified** so the newest file is on top, then open **`index.html`**.
-6. Each conversation folder is named like **`0001-15550100001-alice-example`** (same name as in the index table).
-7. To find a specific person or word, double-click **`5-Search-Exported-Messages.bat`** (or see [SETUP-WINDOWS.md](SETUP-WINDOWS.md)).
+1. **Back up the iPhone** on this PC with **Apple Devices** (Microsoft Store): plug in → **Back Up Now**.
+2. **One-time setup** — pick **one** of these:
 
-Optional: `4-Browse-Messages-In-Browser.bat` reads messages on **this computer only** (not on the internet).
+   **A) Double-click** (after you downloaded the ZIP once):  
+   `windows\0-Setup.bat`  
+   Installs Node if `winget` can, and copies the app to `Documents\imsg-skimmer` if needed.
+
+   **B) One PowerShell command** (downloads the installer script from GitHub):
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/vhuyngo/imsg-skimmer/main/windows/install.ps1'))"
+   ```
+
+   **C) Setup and export in one command** (iPhone must already be backed up to this PC):
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -Command "& { $p=Join-Path $env:TEMP 'imsg-install.ps1'; (New-Object Net.WebClient).DownloadFile('https://raw.githubusercontent.com/vhuyngo/imsg-skimmer/main/windows/install.ps1',$p); & $p -ExportAfterSetup }"
+   ```
+
+3. **Export messages:** double-click `windows\3-Export-All-Messages.bat`  
+   (or run `.\imsg-skimmer.cmd export --backup 1 --all --out "$env:USERPROFILE\Desktop\My-iPhone-Messages"` from `Documents\imsg-skimmer`).
+
+4. Open **`Desktop\My-iPhone-Messages\index.html`** (sort the folder by **Date modified** so `index.html` is on top).
+
+5. Find chats by folder name (`0001-15550100001-alice-example`) or run **`5-Search-Exported-Messages.bat`**.
+
+### Manual path (no scripts)
+
+Download ZIP from [github.com/vhuyngo/imsg-skimmer](https://github.com/vhuyngo/imsg-skimmer) → install [Node 24+](https://nodejs.org) → run `1-Check-Node.bat` → `2-List-My-Backups.bat` → `3-Export-All-Messages.bat`.
+
+### One-liner export (if Node 24+ is already installed)
+
+No ZIP required; downloads the tool each time via `npx`:
+
+```powershell
+npx --yes github:vhuyngo/imsg-skimmer export --backup 1 --all --out "$env:USERPROFILE\Desktop\My-iPhone-Messages" --backup-root "$env:USERPROFILE\Apple\MobileSync\Backup" --backup-root "$env:APPDATA\Apple Computer\MobileSync\Backup"
+```
+
+Optional: `4-Browse-Messages-In-Browser.bat` reads messages on **this computer only**.
 
 ---
 
