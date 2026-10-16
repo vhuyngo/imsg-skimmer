@@ -19,9 +19,12 @@ It explains backups, installing Node.js, downloading this project **without GitH
    - `1-Check-Node.bat`
    - `2-List-My-Backups.bat`
    - `3-Export-All-Messages.bat`  
-   Your messages appear in **`Desktop\My-iPhone-Messages`**.
+   Your messages are saved to **`Desktop\My-iPhone-Messages`**.
+5. In that folder, click **Date modified** so the newest file is on top, then open **`index.html`**.
+6. Each conversation folder is named like **`0001-15550100001-alice-example`** (same name as in the index table).
+7. To find a specific person or word, double-click **`5-Search-Exported-Messages.bat`** (or see [SETUP-WINDOWS.md](SETUP-WINDOWS.md)).
 
-Optional: `4-Browse-Messages-In-Browser.bat` opens a search page on **this computer only**.
+Optional: `4-Browse-Messages-In-Browser.bat` reads messages on **this computer only** (not on the internet).
 
 ---
 
@@ -132,12 +135,22 @@ If you run inside **WSL** and export to Linux paths, writing to `/mnt/c/...` is 
 ### Export layout
 
 ```text
-<out>/index.html
-<out>/0012-<title>/conversation.html
-<out>/0012-<title>/messages.csv
-<out>/0012-<title>/conversation.json
-<out>/0012-<title>/attachments/…
+<out>/index.html                                    (written last; sort by Date modified to find it first)
+<out>/<index>-<phone-number>-<contact-name>/conversation.html
+<out>/<index>-<phone-number>-<contact-name>/messages.csv
+<out>/<index>-<phone-number>-<contact-name>/conversation.json
+<out>/<index>-<phone-number>-<contact-name>/attachments/…
 ```
+
+Example folder: `0001-15550100001-alice-example`. The same string appears in the **Conversation (folder name)** column in `index.html`.
+
+**Find conversations after export:** open `index.html`, or in PowerShell from the export folder:
+
+```powershell
+Select-String -Path ".\*\messages.csv" -Pattern "keyword"
+```
+
+Outgoing **iMessage** = blue bubble; outgoing **SMS/MMS/RCS** = green; incoming = gray (in exported HTML and the local web UI).
 
 CSV uses a UTF-8 BOM and prefixes cells that start with `=`, `+`, `-`, or `@` with `'` so Excel does not run formulas.
 

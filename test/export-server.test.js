@@ -38,8 +38,16 @@ for (const kind of ['plain', 'encrypted']) {
     test('writes index plus HTML, CSV and JSON for every conversation', () => {
       assert.deepEqual(summary, { conversations: 6, messages: 19, attachmentsCopied: 1, attachmentsMissing: 1, attachmentsFailed: 0 });
       assert.ok(fs.existsSync(path.join(out, 'index.html')));
+      const index = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+      assert.ok(index.includes('<code>0001-15550100001-alice-example</code>'));
+      const indexMtime = fs.statSync(path.join(out, 'index.html')).mtimeMs;
+      for (const d of fs.readdirSync(out)) {
+        const p = path.join(out, d);
+        if (fs.statSync(p).isDirectory()) assert.ok(fs.statSync(p).mtimeMs <= indexMtime + 50, `${d} should not be newer than index.html`);
+      }
       const dirs = fs.readdirSync(out).filter((d) => fs.statSync(path.join(out, d)).isDirectory());
       assert.equal(dirs.length, 6);
+      assert.ok(dirs.some((d) => d.startsWith('0001-15550100001-alice-example')));
       for (const d of dirs) {
         for (const f of ['conversation.html', 'messages.csv', 'conversation.json']) assert.ok(fs.existsSync(path.join(out, d, f)), `${d}/${f}`);
         assert.equal(fs.statSync(path.join(out, d)).mode & 0o777, 0o700);
@@ -76,6 +84,7 @@ for (const kind of ['plain', 'encrypted']) {
       const alice = fs.readFileSync(path.join(convDir(out, 1), 'conversation.html'), 'utf8');
       assert.ok(alice.includes('<img src="attachments/1-photo.jpg"'));
       assert.ok(alice.includes('@media print'));
+      assert.match(alice, /class="bubble imessage"/, 'outgoing iMessage uses blue imessage class');
     });
   });
 }

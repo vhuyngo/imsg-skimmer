@@ -3,7 +3,8 @@ import crypto from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import { Contacts } from '../src/contacts.js';
-import { csvCell, safeFileName, slugify } from '../src/export.js';
+import { conversationDirName, csvCell, safeFileName, slugify } from '../src/export.js';
+import { isSmsService, outgoingBubbleClass } from '../src/messageService.js';
 import { Keybag, WrongPasswordError, aesCbcDecrypt, aesCbcEncrypt, aesUnwrap, aesWrap, parseTLV, pkcs7PaddingLength } from '../src/keybag.js';
 import { appleDateSql, attachmentLocation, reactionTarget } from '../src/messages.js';
 import { PlistError, UID, parsePlist, unarchive } from '../src/plist.js';
@@ -172,4 +173,28 @@ test('attachment paths, tapback targets, search normalization and CSV cells', ()
   assert.equal(csvCell('plain'), 'plain');
   assert.equal(safeFileName('../evil/na:me?.jpg'), '_evil_na_me_.jpg');
   assert.equal(slugify('Tôi & Bạn'), 'toi-ban');
+});
+
+test('conversationDirName uses index, phone digits and contact slug', () => {
+  const conv = {
+    id: 12,
+    title: 'Alice Example',
+    identifier: '+15550100001',
+    participants: [{ handle: '+15550100001', name: 'Alice Example' }],
+  };
+  assert.equal(conversationDirName(conv), '0012-15550100001-alice-example');
+  assert.equal(
+    conversationDirName({ id: 3, title: 'Weekend Plans', identifier: 'chat100000000000000001', participants: [] }),
+    '0003-100000000000000001-weekend-plans',
+  );
+});
+
+test('outgoing bubble color follows SMS/MMS/RCS vs iMessage per message', () => {
+  assert.equal(isSmsService('SMS'), true);
+  assert.equal(isSmsService('iMessage'), false);
+  assert.equal(isSmsService('RCS'), true);
+  assert.equal(outgoingBubbleClass(true, 'SMS'), ' sms');
+  assert.equal(outgoingBubbleClass(true, 'iMessage'), ' imessage');
+  assert.equal(outgoingBubbleClass(true, null), ' imessage');
+  assert.equal(outgoingBubbleClass(false, 'SMS'), '');
 });

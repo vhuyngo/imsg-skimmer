@@ -77,7 +77,8 @@ const hasText = (s) => s.trim() !== '';
 const fold = (s) => s.normalize('NFD').replace(/\p{M}+/gu, '').replace(/[đĐ]/g, 'd').toLowerCase();
 const toId = (s) => (s != null && /^\d+$/.test(s) ? Number(s) : null);
 const isAbort = (err) => err?.name === 'AbortError';
-const isGreen = (service) => typeof service === 'string' && /^(sms|mms|rcs)$/i.test(service);
+// Keep in sync with src/messageService.js (browser cannot import Node modules here).
+const isSmsService = (service) => typeof service === 'string' && /^(sms|mms|rcs)$/i.test(service.trim());
 
 function dayKey(ms) {
   const d = new Date(ms);
@@ -843,7 +844,7 @@ function renderMessage(m, showSender) {
     return row;
   }
   row.classList.add(m.fromMe ? 'out' : 'in');
-  if (m.fromMe) row.classList.add(isGreen(m.service) ? 'sms' : 'imessage');
+  if (m.fromMe) row.classList.add(isSmsService(m.service) ? 'sms' : 'imessage');
   if (showSender) row.append(h('div', 'sender', personLabel(m.sender)));
   const bubble = h('div', 'bubble');
   const subject = cleanText(m.subject);

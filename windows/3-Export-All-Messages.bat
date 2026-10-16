@@ -41,4 +41,10 @@ echo.
 echo Done. Opening the folder on your Desktop...
 start "" "!OUT!"
 echo.
+echo NEXT STEPS:
+echo   1. In File Explorer, click "Date modified" so newest files are on top.
+echo   2. Double-click index.html to see all conversations.
+echo   3. Folder names look like: 0001-15550100001-contact-name
+echo   4. To search for a word, run 5-Search-Exported-Messages.bat in the windows folder.
+echo.
 pause

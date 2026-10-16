@@ -3,11 +3,42 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { normalizeForSearch } from './archive.js';
 import { ensurePrivateDir } from './cache.js';
+import { digitsOf } from './contacts.js';
+import { isSmsService, outgoingBubbleClass } from './messageService.js';
 
 export const FORMATS = ['html', 'csv', 'json'];
 
 export function slugify(title) {
   return normalizeForSearch(title ?? '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'conversation';
+}
+
+const folderSegment = (s, max = 48) =>
+  String(s ?? '')
+    .replace(/[/\\:*?"<>|\x00-\x1f]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, max) || 'unknown';
+
+/** Export folder name: `<index>-<phone-number>-<contact-name>`. */
+export function conversationDirName(conv) {
+  const index = String(conv.id).padStart(4, '0');
+  const phone = phoneFolderSegment(conv);
+  const name = folderSegment(slugify(conv.title), 56);
+  return `${index}-${phone}-${name}`.slice(0, 200);
+}
+
+function phoneFolderSegment(conv) {
+  const handles = conv.participants?.map((p) => p.handle).filter(Boolean) ?? [];
+  const pick =
+    conv.identifier ??
+    handles.find((h) => !String(h).includes('@')) ??
+    handles[0] ??
+    'unknown';
+  const digits = digitsOf(pick);
+  if (digits.length >= 7) return digits.slice(0, 20);
+  if (String(pick).includes('@')) return folderSegment(String(pick).replace(/@/g, '-at-'), 40);
+  return folderSegment(pick, 40);
 }
 
 export function safeFileName(name) {
@@ -103,8 +134,8 @@ h1 { font-size: 22px; margin: 0 0 6px; }
 .msg.system { align-items: center; color: #777; font-size: 12px; font-style: italic; }
 .sender { font-size: 11px; color: #666; margin: 0 10px 2px; }
 .bubble { max-width: 75%; padding: 7px 12px; border-radius: 16px; background: #e9e9eb; white-space: pre-wrap; overflow-wrap: anywhere; }
-.me .bubble { background: #0b84ff; color: #fff; }
-.me .bubble.sms { background: #34c759; }
+.me .bubble.imessage { background: #0b84ff; color: #fff; }
+.me .bubble.sms { background: #34c759; color: #fff; }
 .subject { font-weight: 600; }
 .meta { font-size: 10px; color: #888; margin: 2px 10px 0; }
 .att { margin-top: 6px; }
@@ -171,19 +202,26 @@ function conversationHtml(archive, conv, records, range) {
       continue;
     }
     const cls = r.fromMe ? 'me' : 'them';
-    const sms = r.service && r.service !== 'iMessage' ? ' sms' : '';
+    const bubbleKind = outgoingBubbleClass(r.fromMe, r.service);
     const sender = !r.fromMe && conv.isGroup ? `<div class="sender">${esc(personLabel(r.sender))}</div>` : '';
     const body = [
       r.subject ? `<div class="subject">${esc(r.subject)}</div>` : '',
       r.text ? `<div class="text">${esc(r.text)}</div>` : r.unsent ? '<div class="text missing">Message unsent</div>' : '',
       ...r.attachments.map(attachmentHtml),
     ].join('');
-    const flags = [r.edited ? 'Edited' : '', r.service && r.service !== 'iMessage' ? r.service : ''].filter(Boolean).join(' · ');
+    const serviceNote = r.service
+      ? isSmsService(r.service)
+        ? r.service.toUpperCase()
+        : /^imessage$/i.test(r.service)
+          ? ''
+          : r.service
+      : '';
+    const flags = [r.edited ? 'Edited' : '', serviceNote].filter(Boolean).join(' · ');
     const reactions = r.reactions.length
       ? `<div class="reactions">${r.reactions.map((x) => esc(`${x.emoji} ${x.fromMe ? 'You' : personLabel(x.sender)}`)).join(' · ')}</div>`
       : '';
     parts.push(
-      `<div class="msg ${cls}" id="m${r.id}">${sender}<div class="bubble${sms}">${body}</div>` +
+      `<div class="msg ${cls}" id="m${r.id}">${sender}<div class="bubble${bubbleKind}">${body}</div>` +
         `<div class="meta">${esc(stamp.slice(11, 16))}${flags ? ` · ${esc(flags)}` : ''}</div>${reactions}</div>`,
     );
   }
@@ -199,13 +237,13 @@ function indexHtml(archive, rows, range) {
         r.formats.includes('csv') ? `<a href="${esc(`${r.dir}/messages.csv`)}">csv</a>` : '',
         r.formats.includes('json') ? `<a href="${esc(`${r.dir}/conversation.json`)}">json</a>` : '',
       ].filter(Boolean);
-      return `<tr><td>${esc(r.title)}</td><td>${r.messages}</td><td>${r.attachments}</td><td>${esc(localStamp(r.first))}</td><td>${esc(localStamp(r.last))}</td><td>${links.join(' · ')}</td></tr>`;
+      return `<tr><td><code>${esc(r.label)}</code><div class="facts">${esc(r.title)}</div></td><td>${r.messages}</td><td>${r.attachments}</td><td>${esc(localStamp(r.first))}</td><td>${esc(localStamp(r.last))}</td><td>${links.join(' · ')}</td></tr>`;
     })
     .join('\n');
   return page(
     'Messages export',
     `<header><h1>Messages export</h1><p class="facts">${rows.length} conversations${range} · from the backup of ${esc(info.deviceName ?? info.id)} · exported ${esc(localStamp(Date.now()))}</p></header>
-<table><thead><tr><th>Conversation</th><th>Messages</th><th>Attachments</th><th>First</th><th>Last</th><th>Files</th></tr></thead><tbody>
+<table><thead><tr><th>Conversation (folder name)</th><th>Messages</th><th>Attachments</th><th>First</th><th>Last</th><th>Files</th></tr></thead><tbody>
 ${body}
 </tbody></table>`,
   );
@@ -225,7 +263,7 @@ export async function exportConversations(archive, conversations, { outDir, form
     n++;
     const msgs = archive.messagesIn(conv, { from, to });
     if (!msgs.length) continue;
-    const dirName = `${String(conv.id).padStart(4, '0')}-${slugify(conv.title)}`;
+    const dirName = conversationDirName(conv);
     const dir = ensurePrivateDir(path.join(outDir, dirName));
     const files = new Map();
     let copied = 0;
@@ -273,11 +311,17 @@ export async function exportConversations(archive, conversations, { outDir, form
     }
     if (formats.includes('csv')) writeFile(path.join(dir, 'messages.csv'), toCsv(records));
     if (formats.includes('html')) writeFile(path.join(dir, 'conversation.html'), conversationHtml(archive, conv, records, range));
-    rows.push({ title: conv.title, dir: dirName, messages: msgs.length, attachments: copied, first: msgs[0].date, last: msgs[msgs.length - 1].date, formats });
+    rows.push({ title: conv.title, label: dirName, dir: dirName, messages: msgs.length, attachments: copied, first: msgs[0].date, last: msgs[msgs.length - 1].date, formats });
     summary.conversations++;
     summary.messages += msgs.length;
     log(`[${n}/${conversations.length}] conversation ${conv.id}: ${msgs.length} messages, ${copied} attachments`);
   }
-  if (formats.includes('html')) writeFile(path.join(outDir, 'index.html'), indexHtml(archive, rows, range));
+  if (formats.includes('html')) {
+    const indexPath = path.join(outDir, 'index.html');
+    writeFile(indexPath, indexHtml(archive, rows, range));
+    // Written last and touched so File Explorer (sort by Date modified) lists index.html first.
+    const now = new Date();
+    fs.utimesSync(indexPath, now, now);
+  }
   return summary;
 }

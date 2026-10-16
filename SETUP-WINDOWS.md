@@ -99,6 +99,7 @@ Inside the `imsg-skimmer` folder, open the **`windows`** subfolder. You will see
 | **`2-List-My-Backups.bat`** | Shows backups on this PC and gives each a number (`# 1`, `# 2`, …). |
 | **`3-Export-All-Messages.bat`** | Exports **all** conversations to your Desktop. |
 | **`4-Browse-Messages-In-Browser.bat`** | Opens a private page on **this computer only** to read messages (optional). |
+| **`5-Search-Exported-Messages.bat`** | After export, search all `messages.csv` files for a word or name. |
 
 ### How to run a `.bat` file
 
@@ -118,10 +119,53 @@ Inside the `imsg-skimmer` folder, open the **`windows`** subfolder. You will see
 ### When export finishes
 
 - The script opens your **Desktop** folder **`My-iPhone-Messages`** (or a similar name).
-- Open **`index.html`** in your browser to see a list of conversations.
-- Each conversation has its own subfolder with **`conversation.html`**, **`messages.csv`**, and **`conversation.json`**.
+
+**Find `index.html` first**
+
+1. In File Explorer, open the export folder.
+2. Click the **Date modified** column header so the **newest** files are at the **top**.
+3. **`index.html`** is written last on purpose, so it should appear at or near the top.
+4. Double-click **`index.html`** to open the conversation list in your browser.
+
+Each row shows a **folder name** like `0001-15550100001-alice-example` (number, phone or id, contact name).  
+Each conversation also has its own subfolder with that same name, containing **`conversation.html`**, **`messages.csv`**, and **`conversation.json`**.
+
+**Search for specific conversations (terminal)**
+
+You do not have to open every folder by hand.
+
+1. Press **Windows key**, type **PowerShell**, press **Enter**.
+2. Go to the export folder (change the path if yours is different):
+
+   ```powershell
+   cd $HOME\Desktop\My-iPhone-Messages
+   ```
+
+3. Search **all message CSV files** for a word (example: `pharmacy`):
+
+   ```powershell
+   Select-String -Path ".\*\messages.csv" -Pattern "pharmacy"
+   ```
+
+   The path in the output tells you which folder (`0012-…-contact-name`) matched.
+
+4. Or search the index page:
+
+   ```powershell
+   Select-String -Path ".\index.html" -Pattern "alice"
+   ```
+
+5. Open that folder’s **`conversation.html`** to read the thread.
 
 To print one chat as PDF: open **`conversation.html`** → browser menu **Print** → **Save as PDF**.
+
+**Message colors in exports and the browser viewer**
+
+- **Blue** bubbles: messages **you sent** with **iMessage**.
+- **Green** bubbles: messages **you sent** with **SMS/MMS** (or RCS).
+- **Gray** bubbles: messages **you received** (any service).
+
+In a single contact thread, iMessage and SMS can be mixed; each message keeps its own color.
 
 ---
 
